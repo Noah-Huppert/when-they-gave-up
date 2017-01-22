@@ -27,10 +27,11 @@ function parsePage (page) {
 }
 
 var interval = setInterval(function() {
-    console.log("checking user count");
+    console.log("checking user count: " + users.length);
 
     if (users.length === 191) {
-        console.log("Critical length, writting...");
+        clearInterval(interval);
+        console.log("Critical length, witting...");
 
         jsonfile.writeFile("users.json", users, function (err) {
             console.error("Write error: " + err);
@@ -44,13 +45,24 @@ function parseUser (user) {
     user.ghUsername = ghUrlParts[ghUrlParts.length - 1];
 
     var ghUser = client.user(user.ghUsername);
-    ghUser.events(function(err, resp, body) {
+        ghUser.events(function(err, resp, body) {
     });
 }
 
+var runningDelay = 0;
+
 // Max pages is 23 (But maybe 22 b/c 23 didn't have shit)
 for (var i = 0; i < 23; i++) {
-    parsePage(i + 1);
+    var delay = Math.floor(Math.random() * 3000) + 1000;
+    runningDelay += delay;
+
+    console.log("Page " + (i + 1) + " " + runningDelay);
+
+    setTimeout(function() {
+        var pageNumber = JSON.stringify(i + 1);
+        parsePage(i + 1);
+        console.log("    Running " + pageNumber);
+    }, runningDelay);
 }
 
 app.get("/", function(req, res) {
