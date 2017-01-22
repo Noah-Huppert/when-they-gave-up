@@ -13,9 +13,12 @@ var app = express();
 var projects = [];
 var users = [];
 
+osmosis.config("X-Requested-With", "XMLHttpRequest");
+
+
 function parsePage (page) {
     osmosis
-        .get("https://pennapps-xv.devpost.com/users?page=" + page)
+        .get("https://pennapps-xv.devpost.com/participants?page=" + page)
         .find("#users > ul > li > div > div.large-11.small-10.columns > ul.participant-summary > li.participant-name > strong > a")
         .set("name")
         .follow("@href")
@@ -49,20 +52,10 @@ function parseUser (user) {
     });
 }
 
-var runningDelay = 0;
 
 // Max pages is 23 (But maybe 22 b/c 23 didn't have shit)
 for (var i = 0; i < 23; i++) {
-    var delay = Math.floor(Math.random() * 3000) + 1000;
-    runningDelay += delay;
-
-    console.log("Page " + (i + 1) + " " + runningDelay);
-
-    setTimeout(function() {
-        var pageNumber = JSON.stringify(i + 1);
-        parsePage(i + 1);
-        console.log("    Running " + pageNumber);
-    }, runningDelay);
+    parsePage(i + 1);
 }
 
 app.get("/", function(req, res) {
