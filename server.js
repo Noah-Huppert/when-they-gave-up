@@ -2,61 +2,133 @@ var path = require("path");
 
 var jsonfile = require("jsonfile");
 var express = require("express");
-var osmosis = require("osmosis");
 var github = require("octonode");
 var request = require("request");
 
 var client = github.client();
 var app = express();
 
-// Gather project list
-var projects = [];
-var users = [];
+// Vocabs
+var swears = ["fuck", "fucker", "fucking", "shit", "dammit", "cunt", "bitch", "ass", "taint", "crap"]
+var unsure = ["maybe", "no", "yes", "why", "help"];
 
-osmosis.config("X-Requested-With", "XMLHttpRequest");
+function matches (toTest, source) {
+    toTest = toTest.split(" ");
 
+    var matches = 0;
 
-function parsePage (page) {
-    osmosis
-        .get("https://pennapps-xv.devpost.com/participants?page=" + page)
-        .find("#users > ul > li > div > div.large-11.small-10.columns > ul.participant-summary > li.participant-name > strong > a")
-        .set("name")
-        .follow("@href")
-        .find("#portfolio-user-links > li > a:contains(\"GitHub\")@href")
-        .set("ghUrl")
-        .data(function(data) {
-            users.push(data);
-        });
+    for (var i = 0; i < toTest.length; i++) {
+        var test = toTest[i];
+        if (source.indexOf(test) !== -1) {
+            matches++;
+        }
+    }
+
+    return matches;
 }
 
-var interval = setInterval(function() {
-    console.log("checking user count: " + users.length);
+function _group (arr, target, commit) {
+    var deltaCounts = [
+        target.counts.swears - commit.counts.swears,
+        target.counts.unsure - commit.counts.unsure
+    ];
 
-    if (users.length === 191) {
-        clearInterval(interval);
-        console.log("Critical length, witting...");
+    var similar = false;
 
-        jsonfile.writeFile("users.json", users, function (err) {
-            console.error("Write error: " + err);
-        });
+    for (var i = 0; i < deltaCounts.length; i++) {
+        var dc = deltaCounts[i];
+        if (dc > -3) {
+            arr.push(commit);
+            similar = true;
+        }
     }
-}, 5000);
 
-function parseUser (user) {
-    // Get username
-    var ghUrlParts = user.ghUrl.split("/");
-    user.ghUsername = ghUrlParts[ghUrlParts.length - 1];
+    return similar;
+}
 
-    var ghUser = client.user(user.ghUsername);
-        ghUser.events(function(err, resp, body) {
+function groupSimilarSequential (commits, targetCommit, index) {
+    if (targetCommit.counts.swears === 0 && targetCommit.counts.unsure === 0) {
+        return [[], -1];
+    }
+
+    var beforeGroup = [];
+    var afterGroup = [];
+
+    for (var i = index; i > 0; i--) {
+        var res = _group(beforeGroup, commits[i], targetCommit);
+        if (res === false) {
+            break;
+        }
+    }
+
+    for (var i = index; i < commits.length; i++) {
+        var res = _group(afterGroup, commits[i], targetCommit);
+        if (res === false) {
+            break;
+        }
+    }
+
+    var group = [];
+
+    for (var i = 0; i < beforeGroup.length; i++) {
+        group[i] = beforeGroup[i];
+    }
+
+    var targetCommitIndexInGroup = group.length;
+    group[targetCommitIndexInGroup] = targetCommit;
+
+    for (var i = 0; i < afterGroup.length; i++) {
+        group[targetCommitIndexInGroup + 1 + i] = afterGroup[i];
+    }
+
+    return [group, targetCommitIndexInGroup];
+}
+
+function parseRepo (username, repo, cb) {
+    var ghRepo = client.repo(username + "/" + repo);
+    ghRepo.commits(function(err, ghCommits) {
+        var commits = [];
+
+        for (var i = 0; i < ghCommits.length; i++) {
+            commit = ghCommits[i];
+            commit = {
+                sha: commit.sha,
+                date: commit.commit.author.date,
+                message: commit.commit.message,
+                user: commit.author.login,
+                url: commit["html_url"],
+                counts: {},
+                repeats: {}
+            };
+
+            commit.counts.swears = matches(commit.message, swears);
+            commit.counts.unsure = matches(commit.message, unsure);
+
+            commits.push(commit);
+        }
+
+        var troubledCommits = [];
+
+        for (var i = 0; i < commits.length; i++) {
+            var commit = commits[i];
+
+            var groupRes = groupSimilarSequential(commits, commit, i);
+            var group = groupRes[0];
+            var index = groupRes[1];
+
+            if (index != -1) {
+                troubledCommits.push({
+                    commit: commit,
+                    group: group,
+                    index: index
+                });
+            }
+        }
+
+        cb(troubledCommits)
     });
 }
 
-
-// Max pages is 23 (But maybe 22 b/c 23 didn't have shit)
-for (var i = 0; i < 23; i++) {
-    parsePage(i + 1);
-}
 
 app.get("/", function(req, res) {
     res.sendFile(path.resolve(__dirname, 'index.html'));
@@ -66,8 +138,10 @@ app.get("/client.js", function(req, res) {
     res.sendFile(path.resolve(__dirname, 'client.js'));
 });
 
-app.get("/projects", function(req, res) {
-    res.json(projects);
+app.get("/troubles/:username/:repo", function(req, res) {
+    parseRepo(req.params.username, req.params.repo, function(troubledCommits) {
+        res.json(troubledCommits);
+    });
 });
 
 var port = process.env.PORT || 5000;

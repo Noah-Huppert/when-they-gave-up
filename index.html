@@ -2,8 +2,59 @@
 <html>
 <head>
     <title>When did they give up?</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+    <style>
+        body {
+            background: #264653;
+            color: #FFFFFF;;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        input {
+            height: 40px;
+            line-height: 40px;
+            padding-right: 7px;
+            padding-left: 7px;
+            font-size: 18px;
+            border: none;
+            background: #FFFFFF;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            color: black;
+            font-size: 20px;
+            border: none;
+        }
+
+        a {
+            color: white;
+            text-decoration: none;
+        }
+
+        #inputs {
+            margin: auto;
+        }
+    </style>
 </head>
 <body>
+    <div id="inputs">
+        <input type="text" id="username" value="Viseme" placeholder="Username">
+        <input type="text" id="repo" value="server" placeholder="Repo">
+    </div>
+
+    <button id="submit">Submit</button>
+
+    <br><br>
+
+    <div id="msg"></div>
+
+    <ol id="troubles"></ol>
 
     <script src="/client.js"></script>
 </body>
