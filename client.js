@@ -35,16 +35,20 @@ submit.onclick = function() {
         troubledCommits.sort(compare);
 
         if (troubledCommits.length !== 0) {
-            msg.innerText = "Looks like \"" + username.value + "\" has a bit of trouble when developing \"" + repo.value + "\":";
+            msg.innerHTML = "<span>Looks like \"" + username.value + "\" has a bit of trouble when developing \"" + repo.value + "\":</span>";
         } else {
-            msg.innerText = "I'm sure \"" + username.value + "\" had trouble developing \"" + repo.value + "\" but I couldn't find any hard moments.";
+            msg.innerHTML = "<span>I'm sure \"" + username.value + "\" had trouble developing \"" + repo.value + "\" but I couldn't find any hard moments.</span>";
         }
+
+	var out = "";
 
         for (var i = 0; i < troubledCommits.length; i++) {
             var commit = troubledCommits[i];
             var date = new Date(commit.commit.date);
 
-            troubles.innerHTML += "<li><a href=\"" + commit.commit.url + "\">" + (date.getMonth() + 1) + "/" + date.getDate() + "/" + date.getFullYear() + " " + date.getHours() + ":" + date.getMinutes() + ": " + commit.commit.message + "</a></li>";
+            out += "<li><a href=\"" + commit.commit.url + "\">" + (date.getMonth() + 1) + "/" + date.getDate() + "/" + date.getFullYear() + " " + date.getHours() + ":" + date.getMinutes() + ": <b>" + commit.commit.message + "</b></a></li>";
         }
+
+	troubles.innerHTML = out;
     });
 };

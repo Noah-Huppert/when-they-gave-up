@@ -21,10 +21,12 @@
             border: none;
             background: #FFFFFF;
             font-family: 'Open Sans', sans-serif;
+            text-align: center;
         }
 
         button {
             margin-top: 10px;
+            margin-left: 5px;
             padding: 10px;
             background: white;
             color: black;
@@ -37,24 +39,63 @@
             text-decoration: none;
         }
 
+        span {
+            font-size: 20px;
+            margin: 3px;
+            display: inline-block;
+            font-weight: bold;
+        }
+
+        #header {
+            width: 100%;
+            height: 60px;
+            line-height: 60px;
+            font-size: 42px;
+            text-align: center;
+        }
+
         #inputs {
-            margin: auto;
+            width: 100%;
+            display: inline-block;
+            text-align: center;
+        }
+
+        #trouble-wrapper {
+            width: 100%;
+            text-align: center;
+        }
+
+        ol {
+            display: inline-block;
+        }
+
+        li {
+            text-align: left;
+        }
+
+        #msg span {
+            width: 100%;
+            display: block;
+            text-align: center;
         }
     </style>
 </head>
 <body>
+    <div id="header">When did they give up?</div>
     <div id="inputs">
-        <input type="text" id="username" value="Viseme" placeholder="Username">
+        <span>github.com/</span><input type="text" id="username" value="Viseme" placeholder="Username"><span>/</span>
         <input type="text" id="repo" value="server" placeholder="Repo">
+        <button id="submit">Submit</button>
     </div>
 
-    <button id="submit">Submit</button>
 
     <br><br>
 
     <div id="msg"></div>
 
-    <ol id="troubles"></ol>
+    <div id="trouble-wrapper">
+        <ol id="troubles"></ol>
+    </div>
 
     <script src="/client.js"></script>
 </body>
